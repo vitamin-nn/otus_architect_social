@@ -1,0 +1,46 @@
+version: "3"
+
+services:
+    db:
+        image: mysql:5.7
+        ports:
+            - "3306:3306"
+        env_file:
+            - env/database.env
+        volumes:
+            - database-social-data:/var/lib/mysql
+    migration:
+        image: social/migrate
+        depends_on:
+            - db
+        env_file:
+            - env/database.env
+        environment:
+            - MYSQL_DB_HOST=db
+    server:
+        container_name: server
+        image: social/server
+        restart: always
+        ports:
+            - "8090:8090"
+        depends_on:
+            - migration
+        env_file:
+            - env/common.env
+            - env/jwt.env
+            - env/database.env
+            - env/server.env
+        environment:
+            - MYSQL_DB_HOST=db
+    front:
+        image: social/front
+        restart: always
+        ports:
+            - "8080:80"
+        depends_on:
+            - server
+        env_file:
+            - env/front.env
+        
+volumes:
+    database-social-data:
