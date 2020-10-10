@@ -11,6 +11,11 @@
       <li v-if="profile.interest" class="list-group-item"><strong>Interest:</strong> {{ profile.interest}}</li>
       <li v-if="profile.city" class="list-group-item"><strong>City:</strong> {{ profile.city}}</li>
     </ul>
+    <div class="form-group">
+      <div v-if="message" class="alert alert-danger" role="alert">
+        {{ message }}
+      </div>
+    </div>
   </div>
 </template>
 
@@ -21,6 +26,7 @@ export default {
   name: "Profile",
   data: () => ({
     profile: [],
+    message: "",
   }),
 
   computed: {
@@ -39,7 +45,7 @@ export default {
         this.profile = response.data;
       },
       (error) => {
-        this.content =
+        this.message =
           (error.response && error.response.data) ||
           error.message ||
           error.error.toString();
