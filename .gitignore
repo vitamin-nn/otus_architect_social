@@ -2,4 +2,3 @@ logs
 .bin
 front/node_modules/.cache
 deployments/env/prod*
-local.mk
