@@ -34,7 +34,7 @@ func serverCmd(cfg *config.Config) *cobra.Command {
 
 			go func() {
 				log.Info("Starting HTTP server")
-				if err := httpSrv.Run(cfg.HTTPServer.Addr); err != nil {
+				if err := httpSrv.Run(cfg.HTTPServer.GetAddr()); err != nil {
 					log.Fatal(err)
 				}
 			}()

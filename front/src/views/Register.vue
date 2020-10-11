@@ -180,7 +180,6 @@ export default {
         if (isValid) {
           this.$store.dispatch("auth/register", this.user).then(
             () => {
-              this.successful = true;
               this.$router.push("/profile");
             },
             (error) => {

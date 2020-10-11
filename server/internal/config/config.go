@@ -29,11 +29,16 @@ type MySQL struct {
 	Password string `env:"MYSQL_PASSWORD,required"`
 	DB       string `env:"MYSQL_DATABASE,required"`
 	DBHost   string `env:"MYSQL_DB_HOST,required"`
-	Port     int    `env:"MYSQL_PORT,required"`
+	Port     int    `env:"MYSQL_PORT"`
 }
 
 func (cm *MySQL) GetDSN() string {
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true", cm.User, cm.Password, cm.DBHost, cm.Port, cm.DB)
+	fullHost := cm.DBHost
+	if cm.Port > 0 {
+		fullHost = fmt.Sprintf("%s:%d", cm.DBHost, cm.Port)
+	}
+
+	return fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true", cm.User, cm.Password, fullHost, cm.DB)
 }
 
 type Log struct {
@@ -42,8 +47,16 @@ type Log struct {
 
 type HTTPServer struct {
 	Addr         string        `env:"HTTP_SERVER_ADDR,required"`
+	Port         int           `env:"PORT"`
 	WriteTimeout time.Duration `env:"HTTP_SERVER_WRITETIMEOUT" envDefault:"10s"`
 	ReadTimeout  time.Duration `env:"HTTP_SERVER_READTIMEOUT" envDefault:"10s"`
+}
+
+func (s *HTTPServer) GetAddr() string {
+	if s.Port > 0 {
+		return fmt.Sprintf(":%d", s.Port)
+	}
+	return s.Addr
 }
 
 type JWT struct {

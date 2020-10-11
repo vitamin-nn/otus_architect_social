@@ -40,7 +40,6 @@ services:
         depends_on:
             - server
         env_file:
-            - env/front.env
-        
+            - env/front.env        
 volumes:
     database-social-data:

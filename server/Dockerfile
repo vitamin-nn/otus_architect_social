@@ -1,13 +1,18 @@
+# This dockerfile was created for heroku deploy.
+# For other reasons use Dockerfile.server.
+
 FROM golang:1.14-alpine AS builder
 
 WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/social-server
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o social-server
 
-FROM scratch
+FROM alpine:latest
 
-COPY --from=builder /go/bin/social-server /go/bin/social-server
-ENTRYPOINT ["/go/bin/social-server"]
-CMD ["server"]
-EXPOSE 8090
+WORKDIR /root/
+
+COPY --from=builder /app/social-server .
+CMD ["./social-server", "server"]
