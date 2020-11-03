@@ -10,6 +10,7 @@ import (
 	"github.com/vitamin-nn/otus_architect_social/server/internal/http/handler"
 	authMiddleware "github.com/vitamin-nn/otus_architect_social/server/internal/http/middleware/auth"
 	corsMiddleware "github.com/vitamin-nn/otus_architect_social/server/internal/http/middleware/cors"
+	limitMiddleware "github.com/vitamin-nn/otus_architect_social/server/internal/http/middleware/limit"
 	"github.com/vitamin-nn/otus_architect_social/server/internal/repository"
 )
 
@@ -48,6 +49,8 @@ func getConfiguredRouter(profileRepo repository.ProfileRepo, auth auth.Auth) *gi
 	// Recovery middleware recovers from any panics and writes a 500 if there was one.
 	r.Use(gin.Recovery())
 
+	r.Use(limitMiddleware.MaxAllowed(10))
+
 	r.Use(corsMiddleware.CORSMiddleware())
 
 	authorized := r.Group("/api")
@@ -67,6 +70,10 @@ func getConfiguredRouter(profileRepo repository.ProfileRepo, auth auth.Auth) *gi
 
 		authorized.GET("/profile", func(c *gin.Context) {
 			handler.MyProfile(c, profileRepo, auth)
+		})
+
+		authorized.GET("/profile/filter", func(c *gin.Context) {
+			handler.FilteredProfile(c, profileRepo)
 		})
 
 		authorized.GET("/friends", func(c *gin.Context) {

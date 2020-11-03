@@ -1,4 +1,4 @@
 logs
-.bin
+server/.bin
 front/node_modules/.cache
 deployments/env/prod*

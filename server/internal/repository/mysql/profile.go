@@ -362,6 +362,59 @@ func (m *MySQL) GetFriendsProfileList(ctx context.Context, profileID, limit, off
 	return result, nil
 }
 
+func (m *MySQL) GetProfileListByNameFilter(ctx context.Context, fName, sName string, limit, offset int) ([]*repository.Profile, error) {
+	var result []*repository.Profile
+
+	q := `SELECT
+			id,
+			email,
+			first_name,
+			last_name,
+			birthdate,
+			sex,
+			interest_list,
+			city
+		FROM user_profile FORCE INDEX (f_l_name_idx)
+		WHERE first_name LIKE ?
+		AND last_name LIKE ?
+		ORDER BY id
+		LIMIT ?
+		OFFSET ?`
+
+	rows, err := m.db.QueryContext(ctx, q, fName, sName, limit, offset)
+
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+
+	var p *repository.Profile
+	for rows.Next() {
+		p = new(repository.Profile)
+		err = rows.Scan(&p.ID,
+			&p.Email,
+			&p.FirstName,
+			&p.LastName,
+			&p.Birth,
+			&p.Sex,
+			&p.Interest,
+			&p.City,
+		)
+
+		if err != nil {
+			return result, err
+		}
+
+		result = append(result, p)
+	}
+
+	if err := rows.Err(); err != nil {
+		return result, err
+	}
+
+	return result, nil
+}
+
 func getSpecificError(err error, constraintErr error) error {
 	if errMy, ok := err.(*mysql.MySQLError); ok {
 		if errMy.Number == ConstraintViolationCode {

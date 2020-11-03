@@ -3,12 +3,11 @@ ifndef $(GOPATH)
 	export GOPATH
 endif
 
-ifneq (,$(wildcard ./deployments/env/front.env))
-    include ./deployments/env/front.env
-    export
-endif
-
 up: build-docker-migrate build-docker-server build-docker-front
+	ifneq (,$(wildcard ./deployments/env/front.env))
+		include ./deployments/env/front.env
+		export
+	endif
 	env $(cat ./deployments/env/front.env | xargs) docker-compose -f ./deployments/docker-compose.yml up -d
 
 down:
@@ -26,9 +25,6 @@ build-docker-front:
 build:
 	cd server && \
 	CGO_ENABLED=0 GOARCH=amd64 go build -o ./.bin/social_server
-
-run-server:
-	source ./configs/.local.env && cd server && go run . server
 
 lint:
 	golangci-lint run ./server/...

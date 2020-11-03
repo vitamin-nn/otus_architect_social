@@ -26,4 +26,5 @@ type ProfileRepo interface {
 	AddFriend(ctx context.Context, profileID1, profileID2 int) error
 	RemoveFriend(ctx context.Context, profileID1, profileID2 int) error
 	GetProfileByEmail(ctx context.Context, email string) (*Profile, error)
+	GetProfileListByNameFilter(ctx context.Context, fName, sName string, limit, offset int) ([]*Profile, error)
 }

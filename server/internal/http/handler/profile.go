@@ -51,3 +51,35 @@ func MyProfile(c *gin.Context, profileRepo repository.ProfileRepo, auth auth.Aut
 
 	c.JSON(http.StatusOK, p)
 }
+
+func FilteredProfile(c *gin.Context, profileRepo repository.ProfileRepo) {
+	fNameFilter := c.Query("fName")
+	sNameFilter := c.Query("sName")
+
+	if fNameFilter == "" || sNameFilter == "" {
+		log.Debugf("invaid params: fName and sName are required: %s, %s", fNameFilter, sNameFilter)
+		c.JSON(400, gin.H{"error": "invaid params"})
+		c.Abort()
+
+		return
+	}
+
+	limit, offset, err := getLimitOffset(c)
+
+	if err != nil {
+		log.Debugf("unexpected error limit, offset: %v", err)
+		c.JSON(400, gin.H{"error": "invaid params"})
+		c.Abort()
+
+		return
+	}
+
+	pList, err := profileRepo.GetProfileListByNameFilter(c, fNameFilter+"%", sNameFilter+"%", limit, offset)
+	if err != nil {
+		getAbortedFormattedErr(c, err)
+
+		return
+	}
+
+	c.JSON(http.StatusOK, pList)
+}

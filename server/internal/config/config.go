@@ -67,7 +67,7 @@ type JWT struct {
 
 func (cfg *Config) Fields() log.Fields {
 	return log.Fields{
-		"server_addr": cfg.HTTPServer.Addr,
+		"server_addr": cfg.HTTPServer.GetAddr(),
 		"mysql_host":  cfg.MySQL.DBHost,
 		"mysql_port":  cfg.MySQL.Port,
 		"log_level":   cfg.Log.LogLevel,

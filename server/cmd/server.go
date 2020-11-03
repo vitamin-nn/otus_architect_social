@@ -19,7 +19,7 @@ func serverCmd(cfg *config.Config) *cobra.Command {
 		Use:   "server",
 		Short: "Starts social network server",
 		Run: func(cmd *cobra.Command, args []string) {
-			log.WithFields(cfg.Fields()).Info("Starting antibruteforce service")
+			log.WithFields(cfg.Fields()).Info("Starting social server")
 
 			//ctx, cancel := context.WithCancel(context.Background())
 			jwt := jwtAuth.New(cfg.JWT.Secret, cfg.JWT.AccessLifeTime, cfg.JWT.RefreshLifeTime)

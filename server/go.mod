@@ -3,6 +3,7 @@ module github.com/vitamin-nn/otus_architect_social/server
 go 1.14
 
 require (
+	github.com/bxcodec/faker/v3 v3.5.0 // indirect
 	github.com/caarlos0/env/v6 v6.3.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.6.3
