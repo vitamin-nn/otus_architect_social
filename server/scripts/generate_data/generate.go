@@ -13,6 +13,10 @@ import (
 	"github.com/bxcodec/faker/v3"
 )
 
+const (
+	apiSrvPrefix = "http://0.0.0.0:8090/api"
+)
+
 type Register struct {
 	Email     string `faker:"email"`
 	Password  string `faker:"password"`
@@ -43,7 +47,7 @@ func main() {
 			for i := 0; i < 90_000; i++ {
 				_ = faker.FakeData(&r)
 
-				//fmt.Printf("%+v\n", v)
+				fmt.Printf("%+v\n", r)
 				reqBody, err := json.Marshal(map[string]string{
 					"email":      r.Email,
 					"password":   r.Password,
@@ -58,7 +62,7 @@ func main() {
 					panic(err)
 				}
 
-				req, err := http.NewRequest("POST", "http://0.0.0.0:8091/api/register", bytes.NewBuffer(reqBody))
+				req, err := http.NewRequest("POST", apiSrvPrefix+"/register", bytes.NewBuffer(reqBody))
 				if err != nil {
 					panic(err)
 				}

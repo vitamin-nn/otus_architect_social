@@ -1,0 +1,91 @@
+version: "3"
+
+services:
+    mysqld-exporter-master:
+        image: prom/mysqld-exporter
+        environment:
+            - DATA_SOURCE_NAME=exporter:password@(db:3306)/otus_social
+        depends_on:
+            - db
+        ports:
+            - 9104:9104
+        networks:
+            - otus-social-network
+    
+    mysqld-exporter-slave1:
+        image: prom/mysqld-exporter
+        environment:
+            - DATA_SOURCE_NAME=exporter:password@(db-slave1:3306)/otus_social
+        depends_on:
+            - db-slave1
+        ports:
+            - 9105:9104
+        networks:
+            - otus-social-network
+
+    mysqld-exporter-slave2:
+        image: prom/mysqld-exporter
+        environment:
+            - DATA_SOURCE_NAME=exporter:password@(db-slave2:3306)/otus_social
+        depends_on:
+            - db-slave2
+        ports:
+            - 9106:9104
+        networks:
+            - otus-social-network
+
+    cadvisor:
+        image: gcr.io/google-containers/cadvisor
+        volumes:
+            - /:/rootfs:ro
+            - /var/run:/var/run:rw
+            - /sys:/sys:ro
+            - /var/lib/docker/:/var/lib/docker:ro
+        ports:
+            - 8080:8080
+        networks:
+            - otus-social-network
+    
+    prometheus:
+        image: prom/prometheus
+        depends_on:
+            - mysqld-exporter-master
+            - mysqld-exporter-slave1
+            - mysqld-exporter-slave2
+            - cadvisor
+            - node-exporter
+        volumes:
+            - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+            - prometheus_data:/prometheus
+        ports:
+            - 9090:9090
+        networks:
+            - otus-social-network
+
+    node-exporter:
+        image: prom/node-exporter
+        volumes:
+            - "/proc:/host/proc:ro"
+            - "/sys:/host/sys:ro"
+            - "/:/rootfs:ro"
+        command:
+            - '--path.procfs=/host/proc'
+            - '--path.sysfs=/host/sys'
+            - --collector.filesystem.ignored-mount-points
+            - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
+        networks:
+            - otus-social-network
+    
+    grafana:
+        image: grafana/grafana
+        depends_on:
+            - prometheus
+        volumes:
+            - grafana_data:/var/lib/grafana
+        ports:
+            - 3000:3000
+        networks:
+            - otus-social-network
+volumes:
+    prometheus_data:
+    grafana_data:

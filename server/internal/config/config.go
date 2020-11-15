@@ -25,11 +25,12 @@ type Config struct {
 }
 
 type MySQL struct {
-	User     string `env:"MYSQL_USER,required"`
-	Password string `env:"MYSQL_PASSWORD,required"`
-	DB       string `env:"MYSQL_DATABASE,required"`
-	DBHost   string `env:"MYSQL_DB_HOST,required"`
-	Port     int    `env:"MYSQL_PORT"`
+	User      string   `env:"MYSQL_USER,required"`
+	Password  string   `env:"MYSQL_PASSWORD,required"`
+	DB        string   `env:"MYSQL_DATABASE,required"`
+	DBHost    string   `env:"MYSQL_DB_HOST,required"`
+	Port      int      `env:"MYSQL_PORT"`
+	SlavesDSN []string `env:"SLAVES" envSeparator:"|"`
 }
 
 func (cm *MySQL) GetDSN() string {

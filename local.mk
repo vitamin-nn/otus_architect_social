@@ -13,4 +13,4 @@ run-server:
 	source ./configs/.local.env && cd server && go run . server
 
 run-db:
-	docker-compose -f ./deployments/docker-compose.yml up -d db
+	docker-compose -f ./deployments/docker-compose.yml up -d db db-slave1

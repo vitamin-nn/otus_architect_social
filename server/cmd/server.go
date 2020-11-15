@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	jwtAuth "github.com/vitamin-nn/otus_architect_social/server/internal/auth/jwt"
 	"github.com/vitamin-nn/otus_architect_social/server/internal/config"
+	"github.com/vitamin-nn/otus_architect_social/server/internal/db"
 	"github.com/vitamin-nn/otus_architect_social/server/internal/http"
 	"github.com/vitamin-nn/otus_architect_social/server/internal/repository/mysql"
 )
@@ -23,12 +24,23 @@ func serverCmd(cfg *config.Config) *cobra.Command {
 
 			//ctx, cancel := context.WithCancel(context.Background())
 			jwt := jwtAuth.New(cfg.JWT.Secret, cfg.JWT.AccessLifeTime, cfg.JWT.RefreshLifeTime)
-			dbConn, err := connDB(context.Background(), cfg.MySQL.GetDSN())
+
+			dbConnMaster, err := connDB(context.Background(), cfg.MySQL.GetDSN())
 			if err != nil {
-				log.Fatalf("mysql connect error: %v", err)
+				log.Fatalf("mysql master connect error: %v", err)
 			}
 
-			profileRepo := mysql.NewProfileRepo(dbConn)
+			dbPool := db.NewDBPool(dbConnMaster)
+
+			for _, sl := range cfg.MySQL.SlavesDSN {
+				dbConnSlave, err := connDB(context.Background(), sl)
+				if err != nil {
+					log.Fatalf("mysql slave connect error: %v", err)
+				}
+				dbPool.AddSlave(dbConnSlave)
+			}
+
+			profileRepo := mysql.NewProfileRepo(dbPool)
 
 			httpSrv := http.New(profileRepo, jwt, cfg.HTTPServer.WriteTimeout, cfg.HTTPServer.ReadTimeout)
 
@@ -49,7 +61,7 @@ func serverCmd(cfg *config.Config) *cobra.Command {
 				log.Error("Error while shutdown")
 			}
 
-			err = dbConn.Close()
+			err = dbPool.Close()
 			if err != nil {
 				log.Fatalf("mysql close connect error: %v", err)
 			}

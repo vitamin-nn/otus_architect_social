@@ -3,12 +3,48 @@ version: "3"
 services:
     db:
         image: mysql:5.7
+        container_name: "db-master"
         ports:
             - "3306:3306"
         env_file:
             - env/database.env
         volumes:
             - database-social-data:/var/lib/mysql
+            - ./db/replication_async/master.conf.cnf:/etc/mysql/conf.d/mysql.conf.cnf
+            - ./db/init/master_init.sql:/docker-entrypoint-initdb.d/init.sql
+        networks:
+            - otus-social-network
+
+    db-slave1:
+        image: mysql:5.7
+        depends_on:
+            - db
+        ports:
+            - "4306:3306"
+        env_file:
+            - env/database_slave.env
+        volumes:
+            - database-social-data-slave1:/var/lib/mysql
+            - ./db/replication_async/slave1.conf.cnf:/etc/mysql/conf.d/mysql.conf.cnf
+            - ./db/init/slave_init.sql:/docker-entrypoint-initdb.d/init.sql
+        networks:
+            - otus-social-network
+
+    db-slave2:
+        image: mysql:5.7
+        depends_on:
+            - db
+        ports:
+            - "5306:3306"
+        env_file:
+            - env/database_slave.env
+        volumes:
+            - database-social-data-slave2:/var/lib/mysql
+            - ./db/replication_async/slave2.conf.cnf:/etc/mysql/conf.d/mysql.conf.cnf
+            - ./db/init/slave_init.sql:/docker-entrypoint-initdb.d/init.sql
+        networks:
+            - otus-social-network
+
     migration:
         image: social/migrate
         depends_on:
@@ -17,6 +53,9 @@ services:
             - env/database.env
         environment:
             - MYSQL_DB_HOST=db
+        networks:
+            - otus-social-network
+
     server:
         container_name: server
         image: social/server
@@ -32,6 +71,10 @@ services:
             - env/server.env
         environment:
             - MYSQL_DB_HOST=db
+            - SLAVES=otus_social_slave:otus_social_passwd@tcp(db-slave1:3306)/otus_social?parseTime=true|otus_social_slave:otus_social_passwd@tcp(db-slave2:3306)/otus_social?parseTime=true
+        networks:
+            - otus-social-network
+
     front:
         image: social/front
         restart: always
@@ -40,6 +83,13 @@ services:
         depends_on:
             - server
         env_file:
-            - env/front.env        
+            - env/front.env
+        networks:
+            - otus-social-network
+
 volumes:
     database-social-data:
+    database-social-data-slave1:
+    database-social-data-slave2:
+networks:
+    otus-social-network:

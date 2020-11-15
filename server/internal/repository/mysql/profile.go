@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 
+	"github.com/vitamin-nn/otus_architect_social/server/internal/db"
 	outErr "github.com/vitamin-nn/otus_architect_social/server/internal/error"
 	"github.com/vitamin-nn/otus_architect_social/server/internal/repository"
 )
@@ -18,17 +19,18 @@ const (
 var _ repository.ProfileRepo = (*MySQL)(nil)
 
 type MySQL struct {
-	db *sql.DB
+	dbPool *db.DBReplPool
 }
 
-func NewProfileRepo(db *sql.DB) *MySQL {
+func NewProfileRepo(dbPool *db.DBReplPool) *MySQL {
 	return &MySQL{
-		db: db,
+		dbPool: dbPool,
 	}
 }
 
 func (m *MySQL) CreateProfile(ctx context.Context, profile *repository.Profile) (*repository.Profile, error) {
-	stmt, err := m.db.PrepareContext(
+	db := m.dbPool.GetMaster()
+	stmt, err := db.PrepareContext(
 		ctx,
 		`INSERT INTO user_profile(
 			email,
@@ -85,7 +87,8 @@ func (m *MySQL) UpdateProfile(ctx context.Context, profile *repository.Profile) 
 }
 
 func (m *MySQL) GetProfileByID(ctx context.Context, pID int) (*repository.Profile, error) {
-	stmt, err := m.db.PrepareContext(
+	db := m.dbPool.GetSlave()
+	stmt, err := db.PrepareContext(
 		ctx,
 		`SELECT
 			id,
@@ -138,7 +141,8 @@ func (m *MySQL) GetProfileByID(ctx context.Context, pID int) (*repository.Profil
 }
 
 func (m *MySQL) AddFriend(ctx context.Context, profileID1, profileID2 int) error {
-	stmt, err := m.db.PrepareContext(
+	db := m.dbPool.GetMaster()
+	stmt, err := db.PrepareContext(
 		ctx,
 		`INSERT INTO user_friends(
 			user_id1,
@@ -173,7 +177,8 @@ func (m *MySQL) AddFriend(ctx context.Context, profileID1, profileID2 int) error
 }
 
 func (m *MySQL) RemoveFriend(ctx context.Context, profileID1, profileID2 int) error {
-	stmt, err := m.db.PrepareContext(
+	db := m.dbPool.GetMaster()
+	stmt, err := db.PrepareContext(
 		ctx,
 		`DELETE FROM user_friends
 		WHERE
@@ -207,7 +212,8 @@ func (m *MySQL) RemoveFriend(ctx context.Context, profileID1, profileID2 int) er
 }
 
 func (m *MySQL) GetProfileByEmail(ctx context.Context, email string) (*repository.Profile, error) {
-	stmt, err := m.db.PrepareContext(
+	db := m.dbPool.GetSlave()
+	stmt, err := db.PrepareContext(
 		ctx,
 		`SELECT
 			id,
@@ -276,7 +282,8 @@ func (m *MySQL) GetProfileList(ctx context.Context, limit, offset int) ([]*repos
 		LIMIT ?
 		OFFSET ?`
 
-	rows, err := m.db.QueryContext(ctx, q, limit, offset)
+	db := m.dbPool.GetSlave()
+	rows, err := db.QueryContext(ctx, q, limit, offset)
 
 	if err != nil {
 		return result, err
@@ -328,7 +335,8 @@ func (m *MySQL) GetFriendsProfileList(ctx context.Context, profileID, limit, off
 		LIMIT ?
 		OFFSET ?`
 
-	rows, err := m.db.QueryContext(ctx, q, profileID, limit, offset)
+	db := m.dbPool.GetSlave()
+	rows, err := db.QueryContext(ctx, q, profileID, limit, offset)
 
 	if err != nil {
 		return result, err
@@ -381,7 +389,8 @@ func (m *MySQL) GetProfileListByNameFilter(ctx context.Context, fName, sName str
 		LIMIT ?
 		OFFSET ?`
 
-	rows, err := m.db.QueryContext(ctx, q, fName, sName, limit, offset)
+	db := m.dbPool.GetSlave()
+	rows, err := db.QueryContext(ctx, q, fName, sName, limit, offset)
 
 	if err != nil {
 		return result, err

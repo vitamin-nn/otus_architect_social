@@ -4,14 +4,17 @@ ifndef $(GOPATH)
 endif
 
 up: build-docker-migrate build-docker-server build-docker-front
-	ifneq (,$(wildcard ./deployments/env/front.env))
-		include ./deployments/env/front.env
-		export
-	endif
-	env $(cat ./deployments/env/front.env | xargs) docker-compose -f ./deployments/docker-compose.yml up -d
+	#ifneq (,$(wildcard ./deployments/env/front.env))
+	#	include ./deployments/env/front.env
+	#	export
+	#endif
+	env $(cat ./deployments/env/front.env | xargs) docker-compose -f ./deployments/docker-compose.yml -f ./deployments/docker-compose-monitoring.yml  up -d
 
 down:
-	docker-compose -f ./deployments/docker-compose.yml down
+	docker-compose -f ./deployments/docker-compose.yml -f ./deployments/docker-compose-monitoring.yml down
+
+up-api: build-docker-migrate build-docker-server
+	docker-compose -f ./deployments/docker-compose.yml -f ./deployments/docker-compose-monitoring.yml up -d db db-slave1 db-slave2 migration server mysqld-exporter-master mysqld-exporter-slave1 cadvisor node-exporter prometheus grafana
 
 build-docker-migrate:
 	docker build -t social/migrate ./migrate
