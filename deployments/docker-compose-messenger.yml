@@ -1,0 +1,74 @@
+version: "3"
+
+services:
+    db-msg-shard1:
+        image: mysql:5.7
+        container_name: "db-msg-shard1"
+        ports:
+            - "6306:3306"
+        env_file:
+            - env/database.env
+        volumes:
+            - database-msg-shard1-data:/var/lib/mysql
+        networks:
+            - otus-social-network
+
+    db-msg-shard2:
+        image: mysql:5.7
+        container_name: "db-msg-shard2"
+        ports:
+            - "7306:3306"
+        env_file:
+            - env/database.env
+        volumes:
+            - database-msg-shard2-data:/var/lib/mysql
+        networks:
+            - otus-social-network
+
+    migration-messenger1:
+        image: social/migrate
+        depends_on:
+            - db-msg-shard1
+        env_file:
+            - env/database.env
+        environment:
+            - MYSQL_DB_HOST=db-msg-shard1
+            - SERVICE_NAME=messenger
+        networks:
+            - otus-social-network
+
+    migration-messenger2:
+        image: social/migrate
+        depends_on:
+            - db-msg-shard2
+        env_file:
+            - env/database.env
+        environment:
+            - MYSQL_DB_HOST=db-msg-shard2
+            - SERVICE_NAME=messenger
+        networks:
+            - otus-social-network
+
+    server-messenger:
+        container_name: server-messenger
+        image: social/server-messenger
+        restart: always
+        ports:
+            - "8091:8091"
+        depends_on:
+            - migration-messenger1
+            - migration-messenger2
+        env_file:
+            - env/common.env
+            - env/jwt.env
+            - env/database.env
+            - env/server_messenger.env
+        environment:
+            - MYSQL_DB_HOST=db
+            - SHARDS=otus_social:otus_social_passwd@tcp(db-msg-shard1:3306)/otus_social?parseTime=true|otus_social:otus_social_passwd@tcp(db-msg-shard2:3306)/otus_social?parseTime=true
+        networks:
+            - otus-social-network
+
+volumes:
+    database-msg-shard1-data:
+    database-msg-shard2-data:
