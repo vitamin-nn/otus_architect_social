@@ -14,17 +14,18 @@ var (
 	userCtxKey           = "authInfo"
 	headerAuthKey        = "Authorization"
 	TokenHeadName        = "Bearer"
-	ErrEmptyAuthHeader   = errors.New("Auth header is empty")
-	ErrInvalidAuthHeader = errors.New("Auth header is invalid")
-	ErrInvalidToken      = errors.New("Invalid token")
+	ErrEmptyAuthHeader   = errors.New("auth header is empty")
+	ErrInvalidAuthHeader = errors.New("auth header is invalid")
+	ErrInvalidToken      = errors.New("invalid token")
 )
 
 func Auth(a auth.Auth) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenStr, err := tokenFromHttpRequest(c)
+		tokenStr, err := tokenFromHTTPRequest(c)
 		// для некоторых запросов аутентификация не требуется
 		if err != nil || tokenStr == "" {
 			c.Next()
+
 			return
 		}
 
@@ -33,6 +34,7 @@ func Auth(a auth.Auth) gin.HandlerFunc {
 			// токен либо протух, либо подменен
 			_ = c.AbortWithError(http.StatusUnauthorized, ErrInvalidToken)
 			log.Errorf("invalid token: %s, err: %v", tokenStr, err)
+
 			return
 		}
 		c.Set(userCtxKey, authInfo)
@@ -41,16 +43,18 @@ func Auth(a auth.Auth) gin.HandlerFunc {
 	}
 }
 
-func ForContext(c *gin.Context) *auth.AuthInfo {
+func ForContext(c *gin.Context) *auth.Info {
 	authInfoInt, exists := c.Get(userCtxKey)
 	if exists {
-		result, _ := authInfoInt.(*auth.AuthInfo)
+		result, _ := authInfoInt.(*auth.Info)
+
 		return result
 	}
+
 	return nil
 }
 
-func tokenFromHttpRequest(c *gin.Context) (string, error) {
+func tokenFromHTTPRequest(c *gin.Context) (string, error) {
 	authHeader := c.GetHeader(headerAuthKey)
 	if authHeader == "" {
 		return "", ErrEmptyAuthHeader
@@ -60,6 +64,6 @@ func tokenFromHttpRequest(c *gin.Context) (string, error) {
 	if !(len(parts) == 2 && parts[0] == TokenHeadName) {
 		return "", ErrInvalidAuthHeader
 	}
-	return parts[1], nil
 
+	return parts[1], nil
 }

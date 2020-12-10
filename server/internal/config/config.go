@@ -17,6 +17,24 @@ func Load() (*Config, error) {
 	return cfg, nil
 }
 
+func LoadSocial() (*SocialConfig, error) {
+	cfg := new(SocialConfig)
+	if err := env.Parse(cfg); err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
+func LoadMessenger() (*MessengerConfig, error) {
+	cfg := new(MessengerConfig)
+	if err := env.Parse(cfg); err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
 type Config struct {
 	Log        Log
 	HTTPServer HTTPServer
@@ -24,13 +42,32 @@ type Config struct {
 	JWT        JWT
 }
 
+type SocialConfig struct {
+	Config
+	MySQL MySQLRepl
+}
+
+type MessengerConfig struct {
+	Config
+	MySQL MySQLShard
+}
+
 type MySQL struct {
-	User      string   `env:"MYSQL_USER,required"`
-	Password  string   `env:"MYSQL_PASSWORD,required"`
-	DB        string   `env:"MYSQL_DATABASE,required"`
-	DBHost    string   `env:"MYSQL_DB_HOST,required"`
-	Port      int      `env:"MYSQL_PORT"`
+	User     string `env:"MYSQL_USER,required"`
+	Password string `env:"MYSQL_PASSWORD,required"`
+	DB       string `env:"MYSQL_DATABASE,required"`
+	DBHost   string `env:"MYSQL_DB_HOST,required"`
+	Port     int    `env:"MYSQL_PORT"`
+}
+
+type MySQLRepl struct {
+	MySQL
 	SlavesDSN []string `env:"SLAVES" envSeparator:"|"`
+}
+
+type MySQLShard struct {
+	MySQL
+	ShardsDSN []string `env:"SHARDS" envSeparator:"|"`
 }
 
 func (cm *MySQL) GetDSN() string {
@@ -57,6 +94,7 @@ func (s *HTTPServer) GetAddr() string {
 	if s.Port > 0 {
 		return fmt.Sprintf(":%d", s.Port)
 	}
+
 	return s.Addr
 }
 

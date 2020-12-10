@@ -13,14 +13,23 @@ up: build-docker-migrate build-docker-server build-docker-front
 down:
 	docker-compose -f ./deployments/docker-compose.yml -f ./deployments/docker-compose-monitoring.yml down
 
-up-api: build-docker-migrate build-docker-server
-	docker-compose -f ./deployments/docker-compose.yml -f ./deployments/docker-compose-monitoring.yml up -d db db-slave1 db-slave2 migration server mysqld-exporter-master mysqld-exporter-slave1 cadvisor node-exporter prometheus grafana
+up-api: build-docker-migrate build-docker-server-profile
+	docker-compose -f ./deployments/docker-compose.yml -f ./deployments/docker-compose-monitoring.yml up -d db db-slave1 db-slave2 migration server-profile mysqld-exporter-master mysqld-exporter-slave1 cadvisor node-exporter prometheus grafana
+
+up-messenger: build-docker-migrate build-docker-server-messenger
+	docker-compose -f ./deployments/docker-compose.yml -f ./deployments/docker-compose-messenger.yml up -d db-msg-shard1 db-msg-shard2 migration-messenger1 migration-messenger2 server-messenger
+
+down-messenger:
+	docker-compose -f ./deployments/docker-compose.yml -f ./deployments/docker-compose-messenger.yml down
 
 build-docker-migrate:
 	docker build -t social/migrate ./migrate
 
-build-docker-server:
-	docker build -t social/server -f server/Dockerfile.server ./server
+build-docker-server-profile:
+	docker build -t social/server-profile -f server/Dockerfile.profile ./server
+
+build-docker-server-messenger:
+	docker build -t social/server-messenger -f server/Dockerfile.messenger ./server
 
 build-docker-front:
 	docker build -t social/front ./front --build-arg API_SERVER_URL=${API_SERVER_URL}

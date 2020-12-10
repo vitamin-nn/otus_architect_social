@@ -12,4 +12,4 @@ WORKDIR /opt/go/app/db/
 
 RUN chmod u+x /opt/go/app/db/migrate.sh
 
-ENTRYPOINT ["/opt/go/app/db/migrate.sh"]
+CMD ["sh", "-c", "/opt/go/app/db/migrate.sh $SERVICE_NAME"]

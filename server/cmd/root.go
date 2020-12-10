@@ -11,12 +11,12 @@ import (
 )
 
 func Execute() {
-	cfg, err := config.Load()
+	cfgSocial, err := config.LoadSocial()
 	if err != nil {
 		log.Fatalf("config file read error: %v", err)
 	}
 
-	err = logger.Init(cfg.Log)
+	err = logger.Init(cfgSocial.Log)
 	if err != nil {
 		log.Fatalf("initialize logger error: %v", err)
 	}
@@ -26,7 +26,14 @@ func Execute() {
 		Short: "Social network",
 	}
 
-	rootCmd.AddCommand(serverCmd(cfg))
+	rootCmd.AddCommand(serverCmd(cfgSocial))
+
+	cfgMsg, err := config.LoadMessenger()
+	if err != nil {
+		log.Fatalf("config file read error: %v", err)
+	}
+
+	rootCmd.AddCommand(messengerCmd(cfgMsg))
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatalf("execute cmd: %v", err)

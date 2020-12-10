@@ -15,4 +15,4 @@ FROM alpine:latest
 WORKDIR /root/
 
 COPY --from=builder /app/social-server .
-CMD ["./social-server", "server"]
+CMD ["./social-server", "profile"]

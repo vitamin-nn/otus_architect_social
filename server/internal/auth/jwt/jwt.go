@@ -11,7 +11,7 @@ import (
 var (
 	signingMethod = jwt.SigningMethodHS256
 
-	ErrTokenInvalid = errors.New("Token is invalid")
+	ErrTokenInvalid = errors.New("token is invalid")
 )
 
 type JWT struct {
@@ -35,6 +35,7 @@ func New(secret string, accessLifeTime, refreshLifeTime time.Duration) *JWT {
 	j.secret = secret
 	j.accessLifeTime = accessLifeTime
 	j.refreshLifeTime = refreshLifeTime
+
 	return j
 }
 
@@ -43,6 +44,7 @@ func (j *JWT) GenerateTokenPair(userID int) (*auth.Token, error) {
 	signedFunc := func(claim jwt.Claims) (string, error) {
 		accessToken := jwt.NewWithClaims(signingMethod, claim)
 		accessTokenString, err := accessToken.SignedString([]byte(j.secret))
+
 		return accessTokenString, err
 	}
 
@@ -72,11 +74,12 @@ func (j *JWT) GenerateTokenPair(userID int) (*auth.Token, error) {
 
 	token.AccessToken = accessTokenString
 	token.RefreshToken = refreshTokenString
+
 	return token, nil
 }
 
-func (j *JWT) GetAuthInfoByToken(tokenStr string) (*auth.AuthInfo, error) {
-	authInfo := new(auth.AuthInfo)
+func (j *JWT) GetAuthInfoByToken(tokenStr string) (*auth.Info, error) {
+	authInfo := new(auth.Info)
 	claim, err := j.ParseAccessToken(tokenStr, false)
 	if err != nil {
 		return authInfo, err
@@ -95,7 +98,6 @@ func (j *JWT) ParseAccessToken(tokenStr string, skipClaimsValidation bool) (*Acc
 	token, err := jwtParser.ParseWithClaims(tokenStr, tokenClaim, func(token *jwt.Token) (interface{}, error) {
 		return []byte(j.secret), nil
 	})
-
 	if err != nil {
 		return tokenClaim, err
 	}
@@ -103,5 +105,6 @@ func (j *JWT) ParseAccessToken(tokenStr string, skipClaimsValidation bool) (*Acc
 	if !token.Valid {
 		return tokenClaim, ErrTokenInvalid
 	}
+
 	return tokenClaim, nil
 }

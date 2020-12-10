@@ -5,11 +5,11 @@ type Token struct {
 	RefreshToken string
 }
 
-type AuthInfo struct {
+type Info struct {
 	UserID int
 }
 
 type Auth interface {
-	GetAuthInfoByToken(token string) (*AuthInfo, error)
+	GetAuthInfoByToken(token string) (*Info, error)
 	GenerateTokenPair(UserID int) (*Token, error)
 }
