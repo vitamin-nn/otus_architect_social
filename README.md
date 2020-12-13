@@ -11,6 +11,7 @@ With default settings web-interface will be on http://localhost:8080/
 
 *Run messenger server*
 ```make up-messenger```
+
 *Switch off messenger server*:
 ```make down-messenger```
 
