@@ -23,7 +23,7 @@ Server starts on local 8091 port.
 
 ```curl -d '{"email": "test@email.com", "password": "...", "first_name": "TestFirst", "last_name": "TestLast", "birth_date": "1990-11-12T00:00:00Z", "sex": "M", "interest": "list of interests", "city": "Moscow"}' -H "Content-Type: application/json" -X POST http://:8090/api/register```
 
-Server returns access-token for this request. You have to use it in other requests that require authentification. You need send it through header ```Authorization: Bearer [access-token]```.
+Server returns access-token in response this request. You have to use this token for other requests that require authentification. You need send it through header like ```Authorization: Bearer [access-token]```.
 
 2. Send message to user_id=90002:
 
