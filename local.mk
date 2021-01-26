@@ -12,6 +12,9 @@ migrate:
 run-profile-server:
 	source ./configs/.local.env && source ./configs/.local.profile.env && cd server && go run . profile
 
+run-feed-consumer:
+	source ./configs/.local.env && source ./configs/.local.profile.env && cd server && go run . feed-consumer
+
 run-db:
 	docker-compose -f ./deployments/docker-compose.yml up -d db db-slave1 db-slave2
 

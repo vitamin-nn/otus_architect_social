@@ -3,20 +3,21 @@ version: "3"
 services:
     db:
         image: mysql:5.7
-        container_name: "db-master"
+        container_name: "social-db-master"
         ports:
             - "3306:3306"
         env_file:
             - env/database.env
         volumes:
             - database-social-data:/var/lib/mysql
-            - ./db/replication_async/master.conf.cnf:/etc/mysql/conf.d/mysql.conf.cnf
+            - ./db/replication_semisync/master.conf.cnf:/etc/mysql/conf.d/mysql.conf.cnf
             - ./db/init/master_init.sql:/docker-entrypoint-initdb.d/init.sql
         networks:
             - otus-social-network
 
     db-slave1:
         image: mysql:5.7
+        container_name: "social-db-slave1"
         depends_on:
             - db
         ports:
@@ -25,13 +26,14 @@ services:
             - env/database_slave.env
         volumes:
             - database-social-data-slave1:/var/lib/mysql
-            - ./db/replication_async/slave1.conf.cnf:/etc/mysql/conf.d/mysql.conf.cnf
+            - ./db/replication_semisync/slave1.conf.cnf:/etc/mysql/conf.d/mysql.conf.cnf
             - ./db/init/slave_init.sql:/docker-entrypoint-initdb.d/init.sql
         networks:
             - otus-social-network
 
     db-slave2:
         image: mysql:5.7
+        container_name: "social-db-slave2"
         depends_on:
             - db
         ports:
@@ -40,7 +42,7 @@ services:
             - env/database_slave.env
         volumes:
             - database-social-data-slave2:/var/lib/mysql
-            - ./db/replication_async/slave2.conf.cnf:/etc/mysql/conf.d/mysql.conf.cnf
+            - ./db/replication_semisync/slave2.conf.cnf:/etc/mysql/conf.d/mysql.conf.cnf
             - ./db/init/slave_init.sql:/docker-entrypoint-initdb.d/init.sql
         networks:
             - otus-social-network
@@ -57,22 +59,51 @@ services:
         networks:
             - otus-social-network
 
+    migration-slave1:
+        image: social/migrate
+        depends_on:
+            - db-slave1
+        env_file:
+            - env/database_slave.env
+        environment:
+            - MYSQL_DB_HOST=db-slave1
+            - SERVICE_NAME=profile
+        networks:
+            - otus-social-network
+
+    migration-slave2:
+        image: social/migrate
+        depends_on:
+            - db-slave2
+        env_file:
+            - env/database_slave.env
+        environment:
+            - MYSQL_DB_HOST=db-slave2
+            - SERVICE_NAME=profile
+        networks:
+            - otus-social-network
+
     server-profile:
-        container_name: server-profile
+        container_name: social-server-profile
         image: social/server-profile
         restart: always
         ports:
             - "8090:8090"
         depends_on:
             - migration-profile
+            - redis
+            - rabbit
         env_file:
             - env/common.env
             - env/jwt.env
+            - env/rabbit.env
             - env/database.env
             - env/server_profile.env
         environment:
             - MYSQL_DB_HOST=db
-            - SLAVES=otus_social_slave:otus_social_passwd@tcp(db-slave1:3306)/otus_social?parseTime=true|otus_social_slave:otus_social_passwd@tcp(db-slave2:3306)/otus_social?parseTime=true
+            #- SLAVES=otus_social_slave:otus_social_passwd@tcp(db-slave1:3306)/otus_social?parseTime=true|otus_social_slave:otus_social_passwd@tcp(db-slave2:3306)/otus_social?parseTime=true
+            - REDIS_URL=redis:6379
+            - RABBITMQ_HOST=rabbit
         networks:
             - otus-social-network
 
@@ -80,7 +111,7 @@ services:
         image: social/front
         restart: always
         ports:
-            - "8080:80"
+            - "8081:80"
         depends_on:
             - server-profile
         env_file:
@@ -88,9 +119,34 @@ services:
         networks:
             - otus-social-network
 
+    redis:
+        container_name: social-redis
+        image: redis:alpine
+        restart: always
+        ports:
+            - "6379:6379"
+        command: ["redis-server", "--appendonly", "yes"]
+        volumes:
+            - redis-social-data:/data
+        networks:
+            - otus-social-network
+
+    rabbit:
+        container_name: social-rabbit
+        image: rabbitmq:3.8.7-management-alpine
+        env_file:
+            - env/rabbit.env
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        networks:
+            - otus-social-network
+
 volumes:
     database-social-data:
     database-social-data-slave1:
     database-social-data-slave2:
+    redis-social-data:
+
 networks:
     otus-social-network:

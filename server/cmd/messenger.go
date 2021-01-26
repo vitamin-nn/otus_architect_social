@@ -6,21 +6,28 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/vitamin-nn/otus_architect_social/server/internal/auth"
 	jwtAuth "github.com/vitamin-nn/otus_architect_social/server/internal/auth/jwt"
 	"github.com/vitamin-nn/otus_architect_social/server/internal/config"
 	"github.com/vitamin-nn/otus_architect_social/server/internal/db/sharding"
-	"github.com/vitamin-nn/otus_architect_social/server/internal/http/server/messenger"
+	authMiddleware "github.com/vitamin-nn/otus_architect_social/server/internal/http/middleware/auth"
+	corsMiddleware "github.com/vitamin-nn/otus_architect_social/server/internal/http/middleware/cors"
+	limitMiddleware "github.com/vitamin-nn/otus_architect_social/server/internal/http/middleware/limit"
+	"github.com/vitamin-nn/otus_architect_social/server/internal/http/server"
+	"github.com/vitamin-nn/otus_architect_social/server/internal/http/server/messenger/handler"
+	"github.com/vitamin-nn/otus_architect_social/server/internal/repository"
 	"github.com/vitamin-nn/otus_architect_social/server/internal/repository/mysql"
 )
 
 func messengerCmd(cfg *config.MessengerConfig) *cobra.Command {
 	return &cobra.Command{
 		Use:   "messenger",
-		Short: "Starts messenger server",
+		Short: "starts messenger server",
 		Run: func(cmd *cobra.Command, args []string) {
-			log.WithFields(cfg.Fields()).Info("Starting messenger server")
+			log.WithFields(cfg.Fields()).Info("starting messenger server")
 
 			jwt := jwtAuth.New(cfg.JWT.Secret, cfg.JWT.AccessLifeTime, cfg.JWT.RefreshLifeTime)
 
@@ -35,11 +42,12 @@ func messengerCmd(cfg *config.MessengerConfig) *cobra.Command {
 			}
 
 			messengerRepo := mysql.NewMessengerRepo(dbShardPool)
+			router := getConfiguredMessengerRouter(messengerRepo, jwt)
 
-			httpSrv := messenger.NewMessenger(messengerRepo, jwt, cfg.HTTPServer.WriteTimeout, cfg.HTTPServer.ReadTimeout)
+			httpSrv := server.NewHTTP(router, cfg.HTTPServer.WriteTimeout, cfg.HTTPServer.ReadTimeout)
 
 			go func() {
-				log.Info("Starting HTTP messenger server")
+				log.Info("starting HTTP messenger server")
 				if err := httpSrv.Run(cfg.HTTPServer.GetAddr()); err != nil {
 					log.Fatal(err)
 				}
@@ -52,7 +60,7 @@ func messengerCmd(cfg *config.MessengerConfig) *cobra.Command {
 
 			defer finish()
 			if err := httpSrv.Shutdown(ctx); err != nil {
-				log.Error("Error while shutdown")
+				log.Error("error while shutdown")
 			}
 
 			err := dbShardPool.Close()
@@ -61,4 +69,32 @@ func messengerCmd(cfg *config.MessengerConfig) *cobra.Command {
 			}
 		},
 	}
+}
+
+func getConfiguredMessengerRouter(messengerRepo repository.MessengerRepo, auth auth.Auth) *gin.Engine {
+	r := gin.New()
+
+	// Global middleware
+	// Logger middleware will write the logs to gin.DefaultWriter even if you set with GIN_MODE=release.
+	// By default gin.DefaultWriter = os.Stdout
+	r.Use(gin.Logger())
+
+	// Recovery middleware recovers from any panics and writes a 500 if there was one.
+	r.Use(gin.Recovery())
+	r.Use(limitMiddleware.MaxAllowed(10))
+	r.Use(corsMiddleware.Middleware())
+
+	authorized := r.Group("/api")
+	authorized.Use(authMiddleware.Auth(auth))
+	{
+		authorized.POST("/send", func(c *gin.Context) {
+			handler.SendMessage(c, messengerRepo, auth)
+		})
+
+		authorized.GET("/dialog/get/:user_id", func(c *gin.Context) {
+			handler.GetDialogMessageList(c, messengerRepo, auth)
+		})
+	}
+
+	return r
 }

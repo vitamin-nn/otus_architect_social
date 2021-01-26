@@ -8,7 +8,7 @@ log_bin = /var/log/mysql/mysql-bin.log
 binlog_format = ROW
 binlog_do_db = otus_social
 
-rpl_semi_sync_master_enabled = 1
+#rpl_semi_sync_master_enabled = 1
 
 gtid_mode = on
 enforce_gtid_consistency = on

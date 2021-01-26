@@ -44,7 +44,9 @@ type Config struct {
 
 type SocialConfig struct {
 	Config
-	MySQL MySQLRepl
+	MySQL  MySQLRepl
+	Redis  Redis
+	Rabbit Rabbit
 }
 
 type MessengerConfig struct {
@@ -84,13 +86,17 @@ type Log struct {
 }
 
 type HTTPServer struct {
-	Addr         string        `env:"HTTP_SERVER_ADDR,required"`
+	Addr         string        `env:"HTTP_SERVER_ADDR"`
 	Port         int           `env:"PORT"`
 	WriteTimeout time.Duration `env:"HTTP_SERVER_WRITETIMEOUT" envDefault:"10s"`
 	ReadTimeout  time.Duration `env:"HTTP_SERVER_READTIMEOUT" envDefault:"10s"`
 }
 
 func (s *HTTPServer) GetAddr() string {
+	if s.Addr == "" {
+		log.Fatalln("Empty HTTP_SERVER_ADDR")
+	}
+
 	if s.Port > 0 {
 		return fmt.Sprintf(":%d", s.Port)
 	}
@@ -102,6 +108,23 @@ type JWT struct {
 	Secret          string        `env:"JWT_SECRET,required"`
 	AccessLifeTime  time.Duration `env:"JWT_ACCESS_LIFETIME,required"`
 	RefreshLifeTime time.Duration `env:"JWT_REFRESH_LIFETIME,required"`
+}
+
+type Redis struct {
+	Addr string `env:"REDIS_URL,required"`
+}
+
+type Rabbit struct {
+	User         string `env:"RABBITMQ_DEFAULT_USER,required"`
+	Password     string `env:"RABBITMQ_DEFAULT_PASS,required"`
+	VHost        string `env:"RABBITMQ_DEFAULT_VHOST,required"`
+	Host         string `env:"RABBITMQ_HOST,required"`
+	ExchangeName string `env:"RABBITMQ_EXCHANGE_NAME,required"`
+	QueueName    string `env:"RABBITMQ_QUEUE_NAME,required"`
+}
+
+func (r *Rabbit) GetAddr() string {
+	return fmt.Sprintf("amqp://%s:%s@%s:5672/%s", r.User, r.Password, r.Host, r.VHost)
 }
 
 func (cfg *Config) Fields() log.Fields {

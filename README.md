@@ -4,7 +4,7 @@
 *Run main project*:
 ```make up```
 
-With default settings web-interface will be on http://localhost:8080/
+With default settings web-interface will be on http://localhost:8081/
 Server service starts on :8090
 
 *Switch off*:

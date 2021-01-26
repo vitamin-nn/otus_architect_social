@@ -3,15 +3,17 @@ ifndef $(GOPATH)
 	export GOPATH
 endif
 
-up: build-docker-migrate build-docker-server build-docker-front
-	#ifneq (,$(wildcard ./deployments/env/front.env))
-	#	include ./deployments/env/front.env
-	#	export
-	#endif
-	env $(cat ./deployments/env/front.env | xargs) docker-compose -f ./deployments/docker-compose.yml -f ./deployments/docker-compose-monitoring.yml  up -d
+ifneq (,$(wildcard ./deployments/env/front.env))
+	include ./deployments/env/front.env
+	export
+endif
+
+
+up: build-docker-migrate build-docker-server-profile build-docker-server-feed-consumer build-docker-front
+	env $(cat ./deployments/env/front.env | xargs) docker-compose -f ./deployments/docker-compose.yml -f ./deployments/docker-compose-monitoring.yml -f ./deployments/docker-compose-feed-consumer.yml  up -d
 
 down:
-	docker-compose -f ./deployments/docker-compose.yml -f ./deployments/docker-compose-monitoring.yml down
+	docker-compose -f ./deployments/docker-compose.yml -f ./deployments/docker-compose-monitoring.yml -f ./deployments/docker-compose-feed-consumer.yml down
 
 up-api: build-docker-migrate build-docker-server-profile
 	docker-compose -f ./deployments/docker-compose.yml -f ./deployments/docker-compose-monitoring.yml up -d db db-slave1 db-slave2 migration server-profile mysqld-exporter-master mysqld-exporter-slave1 cadvisor node-exporter prometheus grafana
@@ -30,6 +32,9 @@ build-docker-server-profile:
 
 build-docker-server-messenger:
 	docker build -t social/server-messenger -f server/Dockerfile.messenger ./server
+
+build-docker-server-feed-consumer:
+	docker build -t social/feed-consumer -f server/Dockerfile.feed_consumer ./server
 
 build-docker-front:
 	docker build -t social/front ./front --build-arg API_SERVER_URL=${API_SERVER_URL}

@@ -23,16 +23,23 @@
         Add to friends
       </button>
     </template>
+    <div class="card" v-for="item in feedItems" v-bind:key="item.id">
+      <div class="card-body">
+        {{ item.body }} (from user id: {{item.user_id}})
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import UserService from "../services/user.service";
+import FeedService from "../services/feed.service";
 
 export default {
   name: "User",
   data: () => ({
     profile: [],
+    feedItems: [],
     loading: false,
     sent: false,
     success: false,
@@ -49,6 +56,19 @@ export default {
     UserService.getPublicProfileById(this.$route.params.userId).then(
       (response) => {
         this.profile = response.data;
+        this.loading = false;
+      },
+      (error) => {
+        this.message =
+          (error.response && error.response.data) ||
+          error.message ||
+          error.error.toString();
+          this.loading = false;
+      }
+    );
+    FeedService.getFeed(this.$route.params.userId).then(
+      (response) => {
+        this.feedItems = response.data;
         this.loading = false;
       },
       (error) => {

@@ -5,5 +5,8 @@ skip-name-resolve
 
 server-id = 1
 log_bin = /var/log/mysql/mysql-bin.log
-binlog_format = STATEMENT
+binlog_format = ROW
 binlog_do_db = otus_social
+
+gtid_mode = on
+enforce_gtid_consistency = on

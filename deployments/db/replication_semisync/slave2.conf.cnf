@@ -8,7 +8,7 @@ log_bin = /var/log/mysql/mysql-bin.log
 relay-log = /var/log/mysql/mysql-relay-bin.log
 binlog_do_db = otus_social
 
-rpl_semi_sync_slave_enabled = 1
+#rpl_semi_sync_slave_enabled = 1
 
 gtid_mode = on
 enforce_gtid_consistency = on
