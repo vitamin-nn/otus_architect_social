@@ -13,7 +13,7 @@ Server service starts on :8090
 *Run messenger server*:
 ```make up-messenger```
 
-Server starts on local 8091 port.
+Messenger server starts on local 8091 port.
 
 *Switch off messenger server*:
 ```make down-messenger```
